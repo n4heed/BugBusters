@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -39,9 +40,14 @@ def restore_persisted_datasets() -> None:
     restored = len(registry.datasets) - before
     logger.info("Dataset persistence: restored %d dataset(s) from SQLite (active=%s)", restored, registry.active_dataset_id)
 
+# Deployed frontend origins (e.g. "https://bugbusters-frontend.onrender.com")
+# go in the ALLOWED_ORIGINS env var, comma-separated — never hardcoded here,
+# since the deployed URL isn't known until the frontend's own first deploy.
+_extra_origins = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", *_extra_origins],
     # Vite picks a different port when 5173 is already taken (as it was
     # during this milestone's own verification) — allow any localhost port
     # in addition to the pinned default, for local dev only.
